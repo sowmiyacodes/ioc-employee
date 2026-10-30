@@ -1,0 +1,66 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start ESSP frontend",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"dev",
+				"--",
+				"--host",
+				"127.0.0.1"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Install ESSP frontend dependencies",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"install"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Verify ESSP frontend",
+			"type": "shell",
+			"command": "curl.exe",
+			"args": [
+				"-sS",
+				"-I",
+				"http://127.0.0.1:3000/"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Verify local login endpoint",
+			"type": "shell",
+			"command": "curl.exe",
+			"args": [
+				"-i",
+				"-sS",
+				"-X",
+				"POST",
+				"http://localhost:8080/api/auth/login",
+				"-H",
+				"Content-Type: application/json",
+				"--data-raw",
+				"{\"username\":\"employee1\",\"password\":\"Password1234!\"}"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
