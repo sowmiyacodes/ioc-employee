@@ -15,7 +15,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Employee Self-Service Portal API")
                         .version("1.0")
-                        .description("Authentication, employee profile, and leave-management APIs."))
+                        .description("Authentication, employee profile, leave-management, and protected payslip APIs."))
                 .components(new Components().addSecuritySchemes("bearerAuth",
                         new SecurityScheme().type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer").bearerFormat("JWT")));

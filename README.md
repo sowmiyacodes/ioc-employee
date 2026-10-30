@@ -1,6 +1,6 @@
 # Employee Self-Service Portal (ESSP)
 The portal combines Spring Boot authentication and authorization, employee profile
-and address management, leave management, and a React self-service interface.
+and address management, leave management, protected payslip downloads, and a React self-service interface.
 
 ---
 
@@ -16,6 +16,7 @@ and address management, leave management, and a React self-service interface.
   - `SYSTEM_ADMIN`
 - **Brute Force Protection:** Bucket4j token bucket rate limiter per client IP / username
 - **Audit Logging:** Security and business events are persisted in the `audit_events` table
+- **Request correlation:** Requests receive an `X-Correlation-ID`, which is returned in the response and stored with audit events
 - **Database:** File-backed H2 for local use, Flyway migrations, optional PostgreSQL configuration
 - **Frontend Stack:** React 18, TypeScript, Vite
 
@@ -36,6 +37,8 @@ and address management, leave management, and a React self-service interface.
 | `GET` | `/api/leaves/pending` | MANAGER, HR_ADMIN, SYSTEM_ADMIN | Retrieves pending requests in authorized scope |
 | `PATCH` | `/api/leaves/{id}/decision` | MANAGER, HR_ADMIN, SYSTEM_ADMIN | Decides a pending request |
 | `PUT` | `/api/leaves/balance` | HR_ADMIN, SYSTEM_ADMIN | Configures an employee leave entitlement |
+| `GET` | `/api/payslips` | EMPLOYEE | Lists the authenticated employee's available payslips |
+| `GET` | `/api/payslips/{id}/download` | EMPLOYEE | Downloads an authorized PDF payslip |
 | `GET` | `/api/manager/dashboard` | MANAGER | Team and leave metrics for direct reports |
 | `GET` | `/api/manager/team` | MANAGER | Active employees reporting to the manager |
 | `GET` | `/api/manager/team/leave-requests` | MANAGER | Paginated leave history for direct reports |
@@ -194,8 +197,8 @@ fabricated leave balances. An HR administrator must configure an entitlement
 before an employee can submit that leave type.
 
 Authentication, access-denial, profile-address, and leave events are recorded in
-the `audit_events` table. Address audit details contain hashes rather than the
-address values themselves.
+the `audit_events` table with a request correlation ID. Address audit details
+contain hashes rather than the address values themselves.
 
 #### Employee profile endpoints:
 
@@ -208,9 +211,18 @@ Address updates require residential and mailing street, city, state, postal code
 and country fields. Address changes persist across logout/login and backend
 restarts in the default file-backed database.
 
-The current repository does not include a payslip module or payslip API.
-Accordingly, payslip access and the payslip-protection acceptance criterion are
-not implemented or verified here.
+Payslip listing and protected PDF downloads are available through the
+employee-only `/api/payslips` endpoints and **My payslips** in the employee UI.
+Payslip metadata is stored in the database; PDF files are stored separately
+under `APP_PAYSLIP_STORAGE_DIRECTORY` (default `./protected-payslips`, relative
+to the backend working directory), outside the frontend's public assets. Each
+download is scoped to the authenticated employee, returned as an attachment
+with `Cache-Control: no-store`, and recorded in `audit_events`. Only trusted
+payroll provisioning should add payslip metadata and PDFs; there is no public
+upload endpoint. The `storage_key` must be a UUID-based `.pdf` filename stored
+inside the configured directory; only that key, never an absolute path, is
+stored in the database. Do not place payslip files in a web-served directory,
+and use fictional data for demonstrations and tests.
 
 ---
 
@@ -221,7 +233,6 @@ and manager-scope operations. Add new business endpoints through the existing
 controller/service/repository patterns and protect them with server-side role
 checks; do not rely on the role-aware frontend navigation as authorization.
 
-The current repository does not contain a payslip module, payslip data model,
-or download API. Payslip access control and downloads therefore remain
-unimplemented and require a separate payslip feature before that acceptance
-criterion can be verified.
+Payslips are delivered through the authenticated payslip API; payroll data
+provisioning is intentionally separate from employee access, and no public
+upload API is provided.

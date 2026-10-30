@@ -110,8 +110,9 @@ public class SecurityConfig {
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization", "Content-Type", "Accept", "X-Requested-With", "X-Correlation-ID"));
+        configuration.setExposedHeaders(List.of("Authorization", "X-Correlation-ID"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

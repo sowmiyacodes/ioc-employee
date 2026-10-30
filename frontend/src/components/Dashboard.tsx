@@ -10,6 +10,7 @@ import { LeaveBalanceAdminPage } from './LeaveBalanceAdminPage';
 import { LeaveManagementPage } from './LeaveManagementPage';
 import { AdminUserManagementPage } from './AdminUserManagementPage';
 import { ManagerTeamPage } from './ManagerTeamPage';
+import { PayslipPage } from './PayslipPage';
 import { adminService, AdminDashboardData, HrDashboardData } from '../services/adminService';
 import { managerService, ManagerDashboardData } from '../services/managerService';
 
@@ -103,7 +104,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, path, onNavigate, on
   const navItems = [
     { path: homePaths[user.role], label: 'Dashboard', icon: '⌂' },
     { path: '/profile', label: 'My profile', icon: '◉' },
-    ...(user.role === 'EMPLOYEE' ? [{ path: '/leaves', label: 'Leave management', icon: '▤' }] : []),
+    ...(user.role === 'EMPLOYEE' ? [
+      { path: '/leaves', label: 'Leave management', icon: '▤' },
+      { path: '/payslips', label: 'My payslips', icon: '▧' },
+    ] : []),
     ...(['MANAGER', 'HR_ADMIN'].includes(user.role) ? [{ path: '/approvals', label: 'Leave approvals', icon: '✓' }] : []),
     ...(user.role === 'HR_ADMIN' ? [{ path: '/balance-admin', label: 'Leave balances', icon: '▦' }] : []),
     ...(user.role === 'MANAGER' ? [{ path: '/team', label: 'My team', icon: '♧' }] : []),
@@ -179,6 +183,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, path, onNavigate, on
             <EmployeeProfilePage onClose={() => onNavigate(homePaths[user.role])} />
           ) : path === '/leaves' && user.role === 'EMPLOYEE' ? (
             <LeaveManagementPage mode="employee" />
+          ) : path === '/payslips' && user.role === 'EMPLOYEE' ? (
+            <PayslipPage />
           ) : path === '/approvals' && ['MANAGER', 'HR_ADMIN'].includes(user.role) ? (
             <LeaveManagementPage mode="approvals" />
           ) : path === '/balance-admin' && user.role === 'HR_ADMIN' ? (

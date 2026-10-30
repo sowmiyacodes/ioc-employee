@@ -12,6 +12,7 @@ describe('role-specific portal routes', () => {
 
   it('restricts frontend navigation according to the authenticated role', () => {
     expect(canAccessPath('EMPLOYEE', '/leaves')).toBe(true);
+    expect(canAccessPath('EMPLOYEE', '/payslips')).toBe(true);
     expect(canAccessPath('EMPLOYEE', '/approvals')).toBe(false);
     expect(canAccessPath('MANAGER', '/approvals')).toBe(true);
     expect(canAccessPath('MANAGER', '/team')).toBe(true);
@@ -19,6 +20,7 @@ describe('role-specific portal routes', () => {
     expect(canAccessPath('MANAGER', '/balance-admin')).toBe(false);
     expect(canAccessPath('SYSTEM_ADMIN', '/user-management')).toBe(true);
     expect(canAccessPath('EMPLOYEE', '/user-management')).toBe(false);
+    expect(canAccessPath('MANAGER', '/payslips')).toBe(false);
     expect(canAccessPath('SYSTEM_ADMIN', '/hr/dashboard')).toBe(false);
   });
 });

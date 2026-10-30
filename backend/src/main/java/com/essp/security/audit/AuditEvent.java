@@ -30,6 +30,9 @@ public class AuditEvent {
     @Column(name = "source_ip", length = 45)
     private String sourceIp;
 
+    @Column(name = "correlation_id", length = 36)
+    private String correlationId;
+
     @Column(length = 2000)
     private String details;
 
@@ -48,6 +51,8 @@ public class AuditEvent {
     public void setTargetId(Long targetId) { this.targetId = targetId; }
     public String getSourceIp() { return sourceIp; }
     public void setSourceIp(String sourceIp) { this.sourceIp = sourceIp; }
+    public String getCorrelationId() { return correlationId; }
+    public void setCorrelationId(String correlationId) { this.correlationId = correlationId; }
     public String getDetails() { return details; }
     public void setDetails(String details) { this.details = details; }
 }

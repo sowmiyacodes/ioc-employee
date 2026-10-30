@@ -2,6 +2,7 @@ package com.essp.security.audit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -64,6 +65,12 @@ public class SecurityAuditService {
         record(event, username, recordId, null, null);
     }
 
+    public void logPayslipDownload(String username, Long payslipId, String ipAddress) {
+        auditLogger.info("[AUDIT-PAYSLIP] timestamp={}, event=PAYSLIP_DOWNLOADED, username={}, payslipId={}, ip={}",
+                LocalDateTime.now(), sanitize(username), payslipId, sanitize(ipAddress));
+        record("PAYSLIP_DOWNLOADED", username, payslipId, ipAddress, null);
+    }
+
     public void logAdministrationEvent(String actor, String event, Long targetId, String details) {
         auditLogger.info("[AUDIT-ADMIN] timestamp={}, event={}, actor={}, targetId={}, details={}",
                 LocalDateTime.now(), sanitize(event), sanitize(actor), targetId, sanitize(details));
@@ -76,6 +83,7 @@ public class SecurityAuditService {
         event.setActorUsername(sanitize(actor, 100));
         event.setTargetId(targetId);
         event.setSourceIp(sourceIp == null ? null : sanitize(sourceIp, 45));
+        event.setCorrelationId(MDC.get("correlationId"));
         event.setDetails(details == null ? null : sanitize(details, 2000));
         auditEventRepository.save(event);
     }

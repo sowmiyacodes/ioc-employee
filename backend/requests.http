@@ -3,6 +3,7 @@
 @leaveRequestId = replace-with-a-request-id
 @employeeProfileId = replace-with-an-employee-profile-id
 @userId = replace-with-a-user-id
+@payslipId = replace-with-a-payslip-id
 
 ### Log in. Use one of the local test accounts listed in README.md.
 POST {{baseUrl}}/api/auth/login
@@ -34,6 +35,14 @@ Content-Type: application/json
   "mailingPostalCode": "replace-with-postal-code",
   "mailingCountry": "replace-with-country"
 }
+
+### List the authenticated employee's payslips
+GET {{baseUrl}}/api/payslips
+Authorization: Bearer {{token}}
+
+### Download one of the authenticated employee's payslips
+GET {{baseUrl}}/api/payslips/{{payslipId}}/download
+Authorization: Bearer {{token}}
 
 ### Get the authenticated employee's leave balance and requests
 GET {{baseUrl}}/api/leaves/balance

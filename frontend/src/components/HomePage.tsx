@@ -19,7 +19,7 @@ const features = [
   {
     icon: 'P',
     title: 'Payslip access',
-    description: 'Payslip downloads are not configured in this portal yet. Contact your administrator for access.',
+    description: 'View your available pay periods and securely download your own PDF payslips.',
   },
   {
     icon: 'S',
@@ -43,8 +43,8 @@ export const HomePage: React.FC<Props> = ({ onSignIn, notice }) => (
         <span className="eyebrow">A simpler way to manage your work essentials</span>
         <h1>Your employee services, all in one place.</h1>
         <p>
-          Manage your profile, keep your details current, and stay informed about
-          your leave through a secure employee portal.
+          Manage your profile, keep your details current, and access your leave
+          and payslips through a secure employee portal.
         </p>
         <button className="button button-primary" onClick={onSignIn}>Sign in to your portal <span aria-hidden="true">→</span></button>
       </section>
