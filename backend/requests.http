@@ -1,0 +1,97 @@
+@baseUrl = http://localhost:8080
+@token = replace-with-a-bearer-token-from-login
+@leaveRequestId = replace-with-a-request-id
+@employeeProfileId = replace-with-an-employee-profile-id
+@userId = replace-with-a-user-id
+
+### Log in. Use one of the local test accounts listed in README.md.
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "replace-with-username",
+  "password": "replace-with-password"
+}
+
+### Get the authenticated user's profile
+GET {{baseUrl}}/api/employees/me
+Authorization: Bearer {{token}}
+
+### Update the authenticated user's address
+PATCH {{baseUrl}}/api/employees/me/address
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "residentialStreet": "replace-with-street",
+  "residentialCity": "replace-with-city",
+  "residentialState": "replace-with-state",
+  "residentialPostalCode": "replace-with-postal-code",
+  "residentialCountry": "replace-with-country",
+  "mailingStreet": "replace-with-street",
+  "mailingCity": "replace-with-city",
+  "mailingState": "replace-with-state",
+  "mailingPostalCode": "replace-with-postal-code",
+  "mailingCountry": "replace-with-country"
+}
+
+### Get the authenticated employee's leave balance and requests
+GET {{baseUrl}}/api/leaves/balance
+Authorization: Bearer {{token}}
+
+###
+GET {{baseUrl}}/api/leaves/my
+Authorization: Bearer {{token}}
+
+### Submit an inclusive calendar-day leave request
+POST {{baseUrl}}/api/leaves
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "leaveType": "ANNUAL",
+  "startDate": "2030-07-01",
+  "endDate": "2030-07-02",
+  "reason": "Optional reason"
+}
+
+### Manager, HR, or system administrator: view pending approvals
+GET {{baseUrl}}/api/leaves/pending
+Authorization: Bearer {{token}}
+
+### Manager, HR, or system administrator: approve or reject a request
+PATCH {{baseUrl}}/api/leaves/{{leaveRequestId}}/decision
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "action": "APPROVE",
+  "remarks": "Optional decision remarks"
+}
+
+### HR: load active employees, leave types, and permitted entitlement days
+GET {{baseUrl}}/api/hr/employees?page=0&size=100
+Authorization: Bearer {{token}}
+
+###
+GET {{baseUrl}}/api/hr/entitlement-options
+Authorization: Bearer {{token}}
+
+### HR: configure an employee's leave entitlement
+PUT {{baseUrl}}/api/leaves/balance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "employeeProfileId": {{employeeProfileId}},
+  "leaveType": "ANNUAL",
+  "entitledDays": 10
+}
+
+### System administrator: search accounts
+GET {{baseUrl}}/api/admin/users?page=0&size=20&search=replace&sortBy=username&direction=asc
+Authorization: Bearer {{token}}
+
+### System administrator: inspect an account
+GET {{baseUrl}}/api/admin/users/{{userId}}
+Authorization: Bearer {{token}}

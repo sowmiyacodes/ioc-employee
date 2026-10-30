@@ -13,39 +13,58 @@ const emptyAddress: Address = {
   mailingPostalCode: '', mailingCountry: '',
 };
 
-const addressFields: Array<{ key: keyof Address; label: string }> = [
-  { key: 'residentialStreet', label: 'Residential street' },
-  { key: 'residentialCity', label: 'Residential city' },
-  { key: 'residentialState', label: 'Residential state' },
-  { key: 'residentialPostalCode', label: 'Residential postal code' },
-  { key: 'residentialCountry', label: 'Residential country' },
-  { key: 'mailingStreet', label: 'Mailing street' },
-  { key: 'mailingCity', label: 'Mailing city' },
-  { key: 'mailingState', label: 'Mailing state' },
-  { key: 'mailingPostalCode', label: 'Mailing postal code' },
-  { key: 'mailingCountry', label: 'Mailing country' },
+const addressFields: Array<{ key: keyof Address; label: string; maxLength: number }> = [
+  { key: 'residentialStreet', label: 'Street address', maxLength: 200 },
+  { key: 'residentialCity', label: 'City', maxLength: 100 },
+  { key: 'residentialState', label: 'State or province', maxLength: 100 },
+  { key: 'residentialPostalCode', label: 'Postal code', maxLength: 20 },
+  { key: 'residentialCountry', label: 'Country', maxLength: 100 },
+  { key: 'mailingStreet', label: 'Street address', maxLength: 200 },
+  { key: 'mailingCity', label: 'City', maxLength: 100 },
+  { key: 'mailingState', label: 'State or province', maxLength: 100 },
+  { key: 'mailingPostalCode', label: 'Postal code', maxLength: 20 },
+  { key: 'mailingCountry', label: 'Country', maxLength: 100 },
 ];
 
 export const EmployeeProfilePage: React.FC<Props> = ({ onClose }) => {
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [form, setForm] = useState<Address>(emptyAddress);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     employeeService.getMyProfile()
       .then((value) => {
+        if (!active) return;
         setProfile(value);
         setForm(value.address || emptyAddress);
       })
-      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Unable to load profile.'))
-      .finally(() => setLoading(false));
+      .catch((reason: unknown) => {
+        if (active) setError(reason instanceof Error ? reason.message : 'Unable to load your profile.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
   const updateField = (key: keyof Address, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const beginEditing = () => {
+    setForm(profile?.address || emptyAddress);
+    setError(null);
+    setSuccess(null);
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setForm(profile?.address || emptyAddress);
+    setError(null);
+    setEditing(false);
   };
 
   const copyResidential = () => {
@@ -59,7 +78,7 @@ export const EmployeeProfilePage: React.FC<Props> = ({ onClose }) => {
     }));
   };
 
-  const save = async (event: React.FormEvent) => {
+  const save = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setSuccess(null);
@@ -68,70 +87,111 @@ export const EmployeeProfilePage: React.FC<Props> = ({ onClose }) => {
       setError(`${missing.label} is required.`);
       return;
     }
+
     setSaving(true);
     try {
       const updated = await employeeService.updateAddress(form);
       setProfile(updated);
       setForm(updated.address || emptyAddress);
-      setSuccess('Address updated successfully.');
+      setEditing(false);
+      setSuccess('Your address has been saved.');
     } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : 'Unable to update address.');
+      setError(reason instanceof Error ? reason.message : 'Unable to update your address.');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div style={styles.card}>Loading employee profile...</div>;
-  if (!profile) return <div style={styles.card}><p style={styles.error}>{error}</p><button onClick={onClose}>Back</button></div>;
+  if (loading) {
+    return <div className="panel loading-screen"><div><div className="spinner" /><p>Loading your profile…</p></div></div>;
+  }
+  if (!profile) {
+    return <section className="panel"><div className="notice notice-error" role="alert">{error || 'Your profile could not be loaded.'}</div><button className="button button-secondary" onClick={onClose}>Back to dashboard</button></section>;
+  }
+
+  const readOnlyDetails = [
+    ['Employee ID', profile.employeeId],
+    ['Legal name', profile.legalName],
+    ['Department', profile.department],
+    ['Designation', profile.designation],
+    ['Joining date', profile.joiningDate],
+    ['Manager', profile.managerName || 'Not assigned'],
+  ];
 
   return (
-    <div style={styles.card}>
-      <div style={styles.heading}>
-        <div><h2 style={styles.title}>My Employee Profile</h2><p style={styles.muted}>Employment details are read-only.</p></div>
-        <button onClick={onClose} style={styles.secondaryButton}>Back to dashboard</button>
+    <>
+      <div className="page-heading">
+        <div><h1>My profile</h1><p>Your employment details are read-only. You can update your address below.</p></div>
+        <button className="button button-secondary" onClick={onClose}>Back to dashboard</button>
       </div>
-      {error && <p role="alert" style={styles.error}>{error}</p>}
-      {success && <p role="status" style={styles.success}>{success}</p>}
-      <div style={styles.infoGrid}>
-        {[
-          ['Employee ID', profile.employeeId],
-          ['Legal name', profile.legalName],
-          ['Department', profile.department],
-          ['Designation', profile.designation],
-          ['Joining date', profile.joiningDate],
-          ['Manager', profile.managerName || 'Not assigned'],
-        ].map(([label, value]) => <div style={styles.infoBox} key={label}><span style={styles.label}>{label}</span><strong>{value}</strong></div>)}
-      </div>
-      <form onSubmit={save}>
-        <div style={styles.addressHeading}><h3 style={styles.subtitle}>Editable address</h3><button type="button" onClick={copyResidential} style={styles.secondaryButton}>Copy residential to mailing</button></div>
-        <div style={styles.formGrid}>
-          {addressFields.map(({ key, label }) => (
-            <label key={key} style={styles.field}>{label}
-              <input value={form[key]} onChange={(event) => updateField(key, event.target.value)} maxLength={key.includes('Street') ? 200 : 100} disabled={saving} />
-            </label>
+      {error && <div className="notice notice-error" role="alert">{error}</div>}
+      {success && <div className="notice notice-success" role="status">{success}</div>}
+      <section className="panel">
+        <h2 className="panel-title">Employment information <small>Managed by your organization</small></h2>
+        <div className="profile-grid">
+          {readOnlyDetails.map(([label, value]) => (
+            <div className="profile-item" key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </div>
           ))}
         </div>
-        <button type="submit" disabled={saving} style={styles.primaryButton}>{saving ? 'Saving...' : 'Save address'}</button>
-      </form>
-    </div>
+      </section>
+      <section className="panel">
+        <div className="page-heading">
+          <div><h2 className="panel-title">Contact address</h2><p>Keep both address records current.</p></div>
+          {!editing && <button className="button button-secondary" onClick={beginEditing}>Edit address</button>}
+        </div>
+        {editing ? (
+          <form onSubmit={save}>
+            <div className="address-columns">
+              {(['Residential address', 'Mailing address'] as const).map((group, groupIndex) => (
+                <fieldset className="address-fieldset" key={group}>
+                  <legend>{group}</legend>
+                  <div className="form-grid">
+                    {addressFields.slice(groupIndex * 5, groupIndex * 5 + 5).map(({ key, label, maxLength }) => (
+                      <label className="field" key={key} htmlFor={key}>
+                        {label}
+                        <input
+                          id={key}
+                          value={form[key]}
+                          onChange={(event) => updateField(key, event.target.value)}
+                          maxLength={maxLength}
+                          required
+                          disabled={saving}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  {groupIndex === 0 && (
+                    <button className="text-button" type="button" onClick={copyResidential}>
+                      Copy residential address to mailing
+                    </button>
+                  )}
+                </fieldset>
+              ))}
+            </div>
+            <div className="form-actions">
+              <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save address'}</button>
+              <button className="button button-secondary" type="button" onClick={cancelEditing} disabled={saving}>Cancel</button>
+            </div>
+          </form>
+        ) : profile.address ? (
+          <div className="address-columns">
+            {[
+              ['Residential address', profile.address.residentialStreet, profile.address.residentialCity, profile.address.residentialState, profile.address.residentialPostalCode, profile.address.residentialCountry],
+              ['Mailing address', profile.address.mailingStreet, profile.address.mailingCity, profile.address.mailingState, profile.address.mailingPostalCode, profile.address.mailingCountry],
+            ].map(([label, ...lines]) => (
+              <div className="address-display" key={label}>
+                <h3>{label}</h3>
+                {lines.map((line, index) => <span key={index}>{line}</span>)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">No address has been added yet. Choose “Edit address” to add one.</div>
+        )}
+      </section>
+    </>
   );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-  card: { backgroundColor: '#1e293b', borderRadius: '10px', padding: '28px', border: '1px solid #334155' },
-  heading: { display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '16px' },
-  title: { margin: 0, fontSize: '22px' },
-  subtitle: { color: '#38bdf8', margin: 0 },
-  muted: { color: '#94a3b8', fontSize: '13px' },
-  infoGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', margin: '22px 0' },
-  infoBox: { backgroundColor: '#0f172a', padding: '14px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '5px' },
-  label: { color: '#94a3b8', fontSize: '12px' },
-  addressHeading: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '24px 0 14px' },
-  formGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' },
-  field: { display: 'flex', flexDirection: 'column', gap: '6px', color: '#cbd5e1', fontSize: '13px' },
-  input: {},
-  primaryButton: { marginTop: '22px', padding: '11px 18px', border: 0, borderRadius: '6px', backgroundColor: '#3b82f6', color: 'white', cursor: 'pointer' },
-  secondaryButton: { padding: '8px 12px', border: '1px solid #475569', borderRadius: '6px', backgroundColor: 'transparent', color: '#f8fafc', cursor: 'pointer' },
-  error: { color: '#fca5a5', backgroundColor: 'rgba(239,68,68,.15)', padding: '10px', borderRadius: '6px' },
-  success: { color: '#86efac', backgroundColor: 'rgba(34,197,94,.15)', padding: '10px', borderRadius: '6px' },
 };

@@ -1,103 +1,70 @@
 import { ApiResponse, LoginResponse, UserProfile } from '../types/auth';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 
 class AuthService {
-  private tokenKey = 'essp_auth_token';
-  private userKey = 'essp_user_info';
+  private readonly tokenKey = 'essp_auth_token';
 
-  public async login(username: string, password: string):Promise<LoginResponse> {
+  public async login(username: string, password: string): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
+    const result = await response.json() as ApiResponse<LoginResponse>;
 
-    const data: ApiResponse<LoginResponse> = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || 'Authentication failed. Please verify your credentials.');
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Authentication failed. Please verify your credentials.');
     }
 
-    this.saveSession(data.data.token, {
-      id: data.data.id,
-      username: data.data.username,
-      email: data.data.email,
-      role: data.data.role,
-      active: true,
-    });
-
-    return data.data;
+    this.saveSession(result.data.token);
+    return result.data;
   }
 
   public async logout(): Promise<void> {
     const token = this.getToken();
-    if (token) {
-      try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+    try {
+      if (token) {
+        const response = await fetch(`${API_BASE_URL}/auth/logout`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-      } catch (err) {
-        console.warn('Backend logout notification failed, clearing local state', err);
+        if (!response.ok) throw new Error('The server could not invalidate your session.');
       }
+    } finally {
+      this.clearSession();
     }
-    this.clearSession();
   }
 
   public async getCurrentUser(): Promise<UserProfile | null> {
     const token = this.getToken();
     if (!token) return null;
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        this.clearSession();
-        return null;
-      }
-
-      const data: ApiResponse<UserProfile> = await response.json();
-      return data.data;
-    } catch {
-      return this.getCachedUser();
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.status === 401 || response.status === 403) {
+      this.clearSession();
+      return null;
     }
+
+    const result = await response.json() as ApiResponse<UserProfile>;
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Unable to verify your session.');
+    }
+    return result.data;
   }
 
-  public saveSession(token: string, user: UserProfile): void {
+  public saveSession(token: string): void {
     localStorage.setItem(this.tokenKey, token);
-    localStorage.setItem(this.userKey, JSON.stringify(user));
   }
 
   public clearSession(): void {
     localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
   }
 
   public getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
-  }
-
-  public getCachedUser(): UserProfile | null {
-    const raw = localStorage.getItem(this.userKey);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  }
-
-  public isAuthenticated(): boolean {
-    return !!this.getToken();
   }
 }
 

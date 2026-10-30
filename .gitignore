@@ -1,22 +1,7 @@
-# Node dependencies
-**/node_modules/
-
-# Build files
-**/dist/
-**/build/
-
-# Environment files
-.env
-.env.*
-
-# Python
-venv/
-.venv/
-__pycache__/
-
-# Java
-target/
-
-# IDE
-.idea/
-.vscode/
+backend/data/*
+!backend/data/.gitkeep
+backend/target/
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+backend/.env
