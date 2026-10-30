@@ -1,0 +1,22 @@
+# Node dependencies
+**/node_modules/
+
+# Build files
+**/dist/
+**/build/
+
+# Environment files
+.env
+.env.*
+
+# Python
+venv/
+.venv/
+__pycache__/
+
+# Java
+target/
+
+# IDE
+.idea/
+.vscode/
