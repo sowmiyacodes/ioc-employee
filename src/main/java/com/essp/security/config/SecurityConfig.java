@@ -58,7 +58,12 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable) // Stateless JWT auth
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers
+<<<<<<< HEAD
                 .frameOptions(frame -> frame.deny())
+=======
+                // H2 console renders inside a same-origin frame during local development.
+                .frameOptions(frame -> frame.sameOrigin())
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
                 .xssProtection(xss -> xss.disable())
                 .contentTypeOptions(contentType -> {})
             )
@@ -66,6 +71,11 @@ public class SecurityConfig {
                 // Public auth endpoints
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/health").permitAll()
+<<<<<<< HEAD
+=======
+                // Local development database console
+                .requestMatchers("/h2-console/**").permitAll()
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Static frontend files
                 .requestMatchers("/", "/index.html", "/static/**", "/assets/**", "/favicon.ico").permitAll()

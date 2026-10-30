@@ -7,6 +7,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+<<<<<<< HEAD
+=======
+import org.springframework.http.converter.HttpMessageNotReadableException;
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,6 +33,15 @@ public class GlobalSecurityExceptionHandler {
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errors.put(error.getField(), error.getDefaultMessage());
         }
+<<<<<<< HEAD
+=======
+
+        @ExceptionHandler(HttpMessageNotReadableException.class)
+        public ResponseEntity<ApiResponse<Void>> handleMalformedJson(HttpMessageNotReadableException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(
+                    "Request contains invalid JSON or a field that is not permitted"));
+        }
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>(false, "Validation failed", errors));
     }

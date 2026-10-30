@@ -1,5 +1,9 @@
 package com.essp.security.entity;
 
+<<<<<<< HEAD
+=======
+import com.essp.employee.entity.EmployeeProfile;
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -39,6 +43,12 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+<<<<<<< HEAD
+=======
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private EmployeeProfile employeeProfile;
+
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
     public User() {}
 
     public User(String username, String email, String passwordHash, Role role) {
@@ -124,4 +134,15 @@ public class User {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+<<<<<<< HEAD
+=======
+
+    public EmployeeProfile getEmployeeProfile() {
+        return employeeProfile;
+    }
+
+    public void setEmployeeProfile(EmployeeProfile employeeProfile) {
+        this.employeeProfile = employeeProfile;
+    }
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
 }

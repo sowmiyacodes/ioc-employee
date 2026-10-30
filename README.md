@@ -62,6 +62,25 @@ npm install
 npm run dev
 ```
 
+<<<<<<< HEAD
+=======
+The frontend is available at `http://localhost:3000`. After signing in, use
+**View and edit my employee profile** to open the Member 70 profile and address
+screen.
+
+#### Employee profile endpoints:
+
+- `GET /api/employees/me` returns the authenticated user's employment details and address.
+- `PATCH /api/employees/me/address` updates only address fields. The authenticated
+  username from the verified JWT determines ownership; client-supplied user IDs are
+  not accepted.
+
+Address updates require residential and mailing street, city, state, postal code,
+and country fields. The H2 database is in memory, so address changes persist across
+logout/login while the application remains running, but are reset when the backend
+restarts.
+
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
 ---
 
 ### 5. Integration Guide for Other Team Members

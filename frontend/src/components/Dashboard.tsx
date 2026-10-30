@@ -1,5 +1,9 @@
 import React from 'react';
 import { UserProfile } from '../types/auth';
+<<<<<<< HEAD
+=======
+import { EmployeeProfilePage } from './EmployeeProfilePage';
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
 
 interface DashboardProps {
   user: UserProfile;
@@ -7,6 +11,10 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
+<<<<<<< HEAD
+=======
+  const [showProfile, setShowProfile] = React.useState(false);
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
   const getBadgeColor = (role: string) => {
     switch (role) {
       case 'SYSTEM_ADMIN': return '#ef4444';
@@ -37,6 +45,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       </header>
 
       <main style={styles.content}>
+<<<<<<< HEAD
+=======
+        {showProfile ? (
+          <EmployeeProfilePage onClose={() => setShowProfile(false)} />
+        ) : (
+          <>
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
         <div style={styles.card}>
           <h2 style={styles.sectionTitle}>Authentication & Session Verified</h2>
           <p style={styles.desc}>
@@ -71,6 +86,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             <li><strong>Member 114 (Payslip & Audit):</strong> Payslip retrieval restricted to owner; security audit logs dispatched to <code>SecurityAuditService</code></li>
           </ul>
         </div>
+<<<<<<< HEAD
+=======
+        <button onClick={() => setShowProfile(true)} style={styles.profileBtn}>View and edit my employee profile</button>
+          </>
+        )}
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
       </main>
     </div>
   );
@@ -196,4 +217,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     lineHeight: 1.8,
     fontSize: '14px',
   },
+<<<<<<< HEAD
+=======
+  profileBtn: {
+    alignSelf: 'flex-start',
+    padding: '11px 18px',
+    border: 0,
+    borderRadius: '6px',
+    backgroundColor: '#0ea5e9',
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+>>>>>>> 5d95ee7 (implemented employee profile and address management)
 };
