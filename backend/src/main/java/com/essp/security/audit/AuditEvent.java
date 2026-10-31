@@ -3,6 +3,7 @@ package com.essp.security.audit;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "audit_events", indexes = {
@@ -38,7 +39,7 @@ public class AuditEvent {
 
     @PrePersist
     void onCreate() {
-        occurredAt = LocalDateTime.now();
+        occurredAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     public Long getId() { return id; }

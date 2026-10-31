@@ -1,17 +1,18 @@
 import { ApiResponse } from '../types/auth';
-import { Payslip } from '../types/payslip';
+import { PayslipPage } from '../types/payslip';
 import { authService } from './authService';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 
 export const payslipService = {
-  async getPayslips(): Promise<Payslip[]> {
+  async getPayslips(page = 0, size = 20): Promise<PayslipPage> {
     const token = authService.getToken();
-    const response = await fetch(`${API_BASE_URL}/payslips`, {
+    const query = new URLSearchParams({ page: String(page), size: String(size) });
+    const response = await fetch(`${API_BASE_URL}/payslips?${query}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       cache: 'no-store',
     });
-    const result = await response.json() as ApiResponse<Payslip[]>;
+    const result = await response.json() as ApiResponse<PayslipPage>;
     if (!response.ok || !result.success) {
       if (response.status === 401) authService.clearSession();
       throw new Error(result.message || 'Unable to load your payslips.');

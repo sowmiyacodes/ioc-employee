@@ -37,8 +37,9 @@ and address management, leave management, protected payslip downloads, and a Rea
 | `GET` | `/api/leaves/pending` | MANAGER, HR_ADMIN, SYSTEM_ADMIN | Retrieves pending requests in authorized scope |
 | `PATCH` | `/api/leaves/{id}/decision` | MANAGER, HR_ADMIN, SYSTEM_ADMIN | Decides a pending request |
 | `PUT` | `/api/leaves/balance` | HR_ADMIN, SYSTEM_ADMIN | Configures an employee leave entitlement |
-| `GET` | `/api/payslips` | EMPLOYEE | Lists the authenticated employee's available payslips |
+| `GET` | `/api/payslips` | EMPLOYEE | Lists the authenticated employee's payslips with pagination |
 | `GET` | `/api/payslips/{id}/download` | EMPLOYEE | Downloads an authorized PDF payslip |
+| `POST` | `/api/hr/payslips` | HR_ADMIN | Uploads a PDF payslip for an active employee |
 | `GET` | `/api/manager/dashboard` | MANAGER | Team and leave metrics for direct reports |
 | `GET` | `/api/manager/team` | MANAGER | Active employees reporting to the manager |
 | `GET` | `/api/manager/team/leave-requests` | MANAGER | Paginated leave history for direct reports |
@@ -78,6 +79,12 @@ is opt-in and should not be enabled for production.
 
 ### 4. Running the Application
 
+#### Prerequisites
+
+- Java 17 or newer
+- Maven 3.8 or newer
+- Node.js 22.12 or newer (required by the current Vite/Vitest toolchain)
+
 #### Backend (Spring Boot):
 ```bash
 # From the Employee_Self-Service_Portal root
@@ -89,7 +96,7 @@ mvn spring-boot:run
 #### Frontend (React / Vite):
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -100,15 +107,34 @@ authorization independently protects API operations.
 
 #### Database (H2):
 
-- JDBC URL: `jdbc:h2:file:./data/essp_db;DB_CLOSE_ON_EXIT=FALSE` (run the backend from `backend`)
-- Username: `sa`
-- Password: leave blank
-- H2 console: `http://localhost:8080/h2-console` (available while the backend is running)
+The local database is file-backed and persists across backend restarts. To open
+it in the H2 web console:
 
-The default H2 database is file-backed under `backend/data`, so application data
-survives backend restarts. Flyway applies the versioned schema migrations, and
-Hibernate validates the schema without recreating it. Back up the database files
-before moving or deleting them.
+1. Start the backend from the `backend` directory:
+   ```powershell
+   cd D:\Employee_Self-Service_Portal\Employee_Self-Service_Portal\backend
+   mvn spring-boot:run
+   ```
+2. While it is running, open [`http://localhost:8080/h2-console`](http://localhost:8080/h2-console).
+3. Use these settings on the H2 login page:
+
+   | Field | Value |
+   |---|---|
+   | Driver Class | `org.h2.Driver` |
+   | JDBC URL | `jdbc:h2:file:./data/essp_db;DB_CLOSE_ON_EXIT=FALSE` |
+   | User Name | `sa` |
+   | Password | *(leave blank)* |
+
+4. Click **Connect**. The database tables appear in the console's left panel.
+
+The database files are stored under `backend/data`. Keep the JDBC URL and
+backend working directory consistent so the console opens the same database
+used by the application. Flyway applies the versioned schema migrations, and
+Hibernate validates the schema without recreating it. Back up the database
+files before moving or deleting them.
+
+The H2 console is intended for local development only. Do not expose it to
+untrusted networks or enable it as a production database administration tool.
 
 OpenAPI documentation is available at `http://localhost:8080/swagger-ui/index.html`;
 the JSON specification is at `http://localhost:8080/v3/api-docs`. Example
@@ -121,6 +147,17 @@ tokens then stop working after a backend restart. Set a private Base64-encoded
 256-bit key for persistent deployments. A placeholder example is available in
 [`backend/.env.example`](./backend/.env.example); Spring Boot does not load that
 file automatically.
+Login attempts are limited to 5 per account and 20 per direct client IP per
+minute by default. When running behind a reverse proxy, configure the proxy and
+network boundary so the backend receives trusted client addresses; untrusted
+`X-Forwarded-For` values are not used for rate-limit identity.
+
+The maximum payslip size defaults to 10 MB and can be changed with
+`APP_PAYSLIP_MAX_FILE_SIZE_BYTES`. Leave this unset for the documented default.
+Payslip provisioning is limited to 10 uploads per HR account per minute by
+default; configure `APP_PAYSLIP_UPLOAD_RATE_LIMIT_CAPACITY` and
+`APP_PAYSLIP_UPLOAD_RATE_LIMIT_REFILL_MINUTES` if the organization needs
+different limits. The in-memory limiter applies per backend instance.
 
 #### Securely create the initial System Administrator
 
@@ -218,11 +255,66 @@ under `APP_PAYSLIP_STORAGE_DIRECTORY` (default `./protected-payslips`, relative
 to the backend working directory), outside the frontend's public assets. Each
 download is scoped to the authenticated employee, returned as an attachment
 with `Cache-Control: no-store`, and recorded in `audit_events`. Only trusted
-payroll provisioning should add payslip metadata and PDFs; there is no public
-upload endpoint. The `storage_key` must be a UUID-based `.pdf` filename stored
-inside the configured directory; only that key, never an absolute path, is
-stored in the database. Do not place payslip files in a web-served directory,
-and use fictional data for demonstrations and tests.
+HR administrators can provision payslips from **Payslip management** in the
+HR workspace, or call `POST /api/hr/payslips` with multipart form fields
+`employeeProfileId`, `payPeriodStart` (`YYYY-MM-DD`), `payPeriodEnd`
+(`YYYY-MM-DD`), and `file`. The endpoint accepts only active employee profiles,
+checks the PDF signature and maximum size, and rejects duplicate employee/pay
+period records. System administrators and employees cannot use this endpoint.
+The `storage_key` is a generated UUID-based `.pdf` filename stored inside the
+configured directory; only that key, never an absolute path or uploaded
+filename, is stored in the database. Do not place payslip files in a web-served
+directory, and use fictional data for demonstrations and tests. Payslip
+calculation and automatic PDF generation are not included; payroll must supply
+the final PDF. Upload errors distinguish invalid input (400), missing or
+inactive employee (404), duplicate period (409), oversized file (413), and
+rate-limited HR uploads (429); unauthorized and forbidden requests return 401
+and 403, respectively.
+
+For a local API upload example, sign in as an HR administrator and use its
+employee profile ID from `GET /api/hr/employees`:
+
+```powershell
+curl.exe -X POST "http://localhost:8080/api/hr/payslips" `
+  -H "Authorization: Bearer $token" `
+  -F "employeeProfileId=1" `
+  -F "payPeriodStart=2030-01-01" `
+  -F "payPeriodEnd=2030-01-31" `
+  -F "file=@C:\path\to\fictional-payslip.pdf;type=application/pdf"
+```
+
+Successful requests return a `201 Created` response. The employee can then
+sign in, open **My payslips**, and download that period's PDF. Do not use real
+employee or payroll data in a demonstration.
+
+All API error bodies include the request's `correlationId`; the same value is
+returned in the `X-Correlation-ID` response header. The identifier is also
+attached to persisted audit events when available.
+
+Architecture, ER, and security notes are in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+The four-role walkthrough is in [`DEMO_SCRIPT.md`](./DEMO_SCRIPT.md).
+The runnable HTTP request collection is [`backend/requests.http`](./backend/requests.http).
+
+Run the frontend unit and browser-level end-to-end tests with:
+
+```powershell
+cd frontend
+npm test
+npx playwright install chromium
+npm run test:e2e
+```
+
+Run the backend tests, including the 25-concurrent-user paginated-list p95 check,
+with `cd backend; mvn test`. The performance test creates synthetic users and
+records across employee, manager, HR, and system-admin list endpoints locally.
+It targets the 2-second p95 requirement; use a production-like database and
+deployment for capacity certification.
+
+The browser tests start an isolated in-memory backend with fictional demo
+accounts and use ports `18080` and `13000`; they do not reuse the development
+database or the usual application ports.
+Latest verification results and unverified checks are summarized in
+[`TEST_REPORT.md`](./TEST_REPORT.md).
 
 ---
 
@@ -233,6 +325,5 @@ and manager-scope operations. Add new business endpoints through the existing
 controller/service/repository patterns and protect them with server-side role
 checks; do not rely on the role-aware frontend navigation as authorization.
 
-Payslips are delivered through the authenticated payslip API; payroll data
-provisioning is intentionally separate from employee access, and no public
-upload API is provided.
+The HR payslip upload is the payroll provisioning boundary; employee access is
+separate and cannot upload or select another employee's records.

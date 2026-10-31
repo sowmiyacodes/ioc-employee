@@ -1,6 +1,9 @@
 package com.essp.security.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.essp.security.audit.CorrelationIdFilter;
 import com.essp.security.audit.SecurityAuditService;
+import com.essp.security.dto.ApiResponse;
 import com.essp.security.jwt.JwtAuthenticationFilter;
 import com.essp.security.jwt.JwtTokenProvider;
 import com.essp.security.repository.UserRepository;
@@ -17,6 +20,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -33,15 +37,20 @@ public class SecurityConfig {
     private final JwtTokenProvider tokenProvider;
     private final SecurityAuditService auditService;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
+    private final CorrelationIdFilter correlationIdFilter;
 
     @Value("${app.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
     private String allowedOrigins;
 
     public SecurityConfig(JwtTokenProvider tokenProvider, SecurityAuditService auditService,
-                          UserRepository userRepository) {
+                          UserRepository userRepository, ObjectMapper objectMapper,
+                          CorrelationIdFilter correlationIdFilter) {
         this.tokenProvider = tokenProvider;
         this.auditService = auditService;
         this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
+        this.correlationIdFilter = correlationIdFilter;
     }
 
     @Bean
@@ -53,6 +62,14 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter(tokenProvider, userRepository);
+    }
+
+    @Bean
+    public FilterRegistrationBean<CorrelationIdFilter> correlationIdFilterRegistration() {
+        FilterRegistrationBean<CorrelationIdFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(correlationIdFilter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     @Bean
@@ -87,19 +104,22 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
-                    response.setContentType("application/json");
+                    response.setContentType("application/json;charset=UTF-8");
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("{\"success\":false,\"message\":\"Unauthorized: Authentication token is missing or invalid\"}");
+                    objectMapper.writeValue(response.getOutputStream(),
+                            ApiResponse.error("Unauthorized: Authentication token is missing or invalid"));
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     String username = request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "ANONYMOUS";
                     auditService.logAccessDenied(username, request.getRequestURI(), request.getRemoteAddr());
-                    response.setContentType("application/json");
+                    response.setContentType("application/json;charset=UTF-8");
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.getWriter().write("{\"success\":false,\"message\":\"Forbidden: You do not have permission to access this resource\"}");
+                    objectMapper.writeValue(response.getOutputStream(),
+                            ApiResponse.error("Forbidden: You do not have permission to access this resource"));
                 })
             )
-            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(correlationIdFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

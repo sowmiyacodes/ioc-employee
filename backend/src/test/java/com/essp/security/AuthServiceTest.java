@@ -82,6 +82,22 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("Changing account identifiers cannot bypass the per-IP login rate limit")
+    void testIpRateLimitAcrossDifferentAccountIdentifiers() {
+        for (int attempt = 0; attempt < 20; attempt++) {
+            LoginRequest request = new LoginRequest("unknown-" + attempt, "Password1234!");
+            ResponseStatusException failure = assertThrows(ResponseStatusException.class,
+                    () -> authService.authenticate(request, "198.51.100.20"));
+            assertEquals(401, failure.getStatusCode().value());
+        }
+
+        ResponseStatusException limited = assertThrows(ResponseStatusException.class,
+                () -> authService.authenticate(
+                        new LoginRequest("another-unknown", "Password1234!"), "198.51.100.20"));
+        assertEquals(429, limited.getStatusCode().value());
+    }
+
+    @Test
     @DisplayName("Inactive account throws 403 Forbidden")
     void testInactiveAccount() {
         User inactive = new User("inactiveuser", "inactive@essp.local", passwordEncoder.encode("Password1234!"), Role.EMPLOYEE);

@@ -10,7 +10,7 @@ export const roleHome: Record<UserRole, string> = {
 const protectedPaths: Record<UserRole, string[]> = {
   EMPLOYEE: ['/employee/dashboard', '/profile', '/leaves', '/payslips'],
   MANAGER: ['/manager/dashboard', '/profile', '/approvals', '/team'],
-  HR_ADMIN: ['/hr/dashboard', '/profile', '/approvals', '/balance-admin'],
+  HR_ADMIN: ['/hr/dashboard', '/profile', '/approvals', '/balance-admin', '/payslip-management'],
   SYSTEM_ADMIN: ['/admin/dashboard', '/profile', '/user-management'],
 };
 

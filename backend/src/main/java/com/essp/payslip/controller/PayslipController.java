@@ -1,6 +1,7 @@
 package com.essp.payslip.controller;
 
 import com.essp.payslip.dto.PayslipDto;
+import com.essp.payslip.dto.PayslipPageDto;
 import com.essp.payslip.service.PayslipService;
 import com.essp.security.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/payslips")
@@ -32,12 +32,15 @@ public class PayslipController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PayslipDto>>> getPayslips(Authentication authentication) {
+    public ResponseEntity<ApiResponse<PayslipPageDto>> getPayslips(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .header(HttpHeaders.PRAGMA, "no-cache")
                 .body(ApiResponse.ok("Payslips retrieved",
-                        payslipService.getPayslips(authentication.getName())));
+                        payslipService.getPayslips(authentication.getName(), page, size)));
     }
 
     @GetMapping("/{id}/download")

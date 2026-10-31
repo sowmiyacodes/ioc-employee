@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.TestPropertySource;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -37,7 +39,9 @@ class SecurityAuthorizationTest {
     @DisplayName("Unauthenticated request to protected endpoint returns 401 Unauthorized")
     void testUnauthenticatedAccess() throws Exception {
         mockMvc.perform(get("/api/employees/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("X-Correlation-ID"))
+                .andExpect(jsonPath("$.correlationId").isNotEmpty());
     }
 
     @Test

@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -169,7 +170,7 @@ public class LeaveService {
         }
 
         request.setDecisionMaker(actor);
-        request.setDecidedAt(LocalDateTime.now());
+        request.setDecidedAt(LocalDateTime.now(ZoneOffset.UTC));
         request.setDecisionRemarks(cleanOptionalText(input.getRemarks()));
         LeaveRequest saved = requestRepository.save(request);
         auditService.logLeaveEvent(username, "LEAVE_" + input.getAction().name(), saved.getId());

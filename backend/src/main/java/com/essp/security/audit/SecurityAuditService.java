@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -24,56 +25,56 @@ public class SecurityAuditService {
 
     public void logLoginSuccess(String username, String role, String ipAddress) {
         auditLogger.info("[AUDIT-SUCCESS] timestamp={}, event=LOGIN_SUCCESS, username={}, role={}, ip={}",
-                LocalDateTime.now(), sanitize(username), sanitize(role), sanitize(ipAddress));
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(username), sanitize(role), sanitize(ipAddress));
         record("LOGIN_SUCCESS", username, null, ipAddress, "role=" + sanitize(role));
     }
 
     public void logLoginFailure(String username, String reason, String ipAddress) {
         auditLogger.warn("[AUDIT-FAILURE] timestamp={}, event=LOGIN_FAILURE, username={}, reason={}, ip={}",
-                LocalDateTime.now(), sanitize(username), sanitize(reason), sanitize(ipAddress));
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(username), sanitize(reason), sanitize(ipAddress));
         record("LOGIN_FAILURE", username, null, ipAddress, "reason=" + sanitize(reason));
     }
 
     public void logLogout(String username, String ipAddress) {
         auditLogger.info("[AUDIT-LOGOUT] timestamp={}, event=LOGOUT, username={}, ip={}",
-                LocalDateTime.now(), sanitize(username), sanitize(ipAddress));
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(username), sanitize(ipAddress));
         record("LOGOUT", username, null, ipAddress, null);
     }
 
     public void logAccessDenied(String username, String requestedUri, String ipAddress) {
         auditLogger.warn("[AUDIT-DENIED] timestamp={}, event=ACCESS_DENIED, username={}, uri={}, ip={}",
-                LocalDateTime.now(), sanitize(username), sanitize(requestedUri), sanitize(ipAddress));
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(username), sanitize(requestedUri), sanitize(ipAddress));
         record("ACCESS_DENIED", username, null, ipAddress, "uri=" + sanitize(requestedUri));
     }
 
     public void logRateLimitExceeded(String ipAddress, String targetIdentifier) {
         auditLogger.warn("[AUDIT-THROTTLED] timestamp={}, event=RATE_LIMIT_EXCEEDED, target={}, ip={}",
-                LocalDateTime.now(), sanitize(targetIdentifier), sanitize(ipAddress));
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(targetIdentifier), sanitize(ipAddress));
         record("RATE_LIMIT_EXCEEDED", targetIdentifier, null, ipAddress, null);
     }
 
     public void logAddressChange(String username, Map<String, String> before, Map<String, String> after) {
         String details = "before=" + digestSnapshot(before) + ";after=" + digestSnapshot(after);
         auditLogger.info("[AUDIT-ADDRESS] timestamp={}, event=ADDRESS_CHANGED, username={}, {}",
-                LocalDateTime.now(), sanitize(username), details);
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(username), details);
         record("ADDRESS_CHANGED", username, null, null, details);
     }
 
     public void logLeaveEvent(String username, String event, Long recordId) {
         auditLogger.info("[AUDIT-LEAVE] timestamp={}, event={}, username={}, recordId={}",
-                LocalDateTime.now(), sanitize(event), sanitize(username), recordId);
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(event), sanitize(username), recordId);
         record(event, username, recordId, null, null);
     }
 
     public void logPayslipDownload(String username, Long payslipId, String ipAddress) {
         auditLogger.info("[AUDIT-PAYSLIP] timestamp={}, event=PAYSLIP_DOWNLOADED, username={}, payslipId={}, ip={}",
-                LocalDateTime.now(), sanitize(username), payslipId, sanitize(ipAddress));
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(username), payslipId, sanitize(ipAddress));
         record("PAYSLIP_DOWNLOADED", username, payslipId, ipAddress, null);
     }
 
     public void logAdministrationEvent(String actor, String event, Long targetId, String details) {
         auditLogger.info("[AUDIT-ADMIN] timestamp={}, event={}, actor={}, targetId={}, details={}",
-                LocalDateTime.now(), sanitize(event), sanitize(actor), targetId, sanitize(details));
+                LocalDateTime.now(ZoneOffset.UTC), sanitize(event), sanitize(actor), targetId, sanitize(details));
         record(event, actor, targetId, null, details);
     }
 

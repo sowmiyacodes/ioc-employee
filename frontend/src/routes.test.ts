@@ -17,7 +17,10 @@ describe('role-specific portal routes', () => {
     expect(canAccessPath('MANAGER', '/approvals')).toBe(true);
     expect(canAccessPath('MANAGER', '/team')).toBe(true);
     expect(canAccessPath('HR_ADMIN', '/balance-admin')).toBe(true);
+    expect(canAccessPath('HR_ADMIN', '/payslip-management')).toBe(true);
     expect(canAccessPath('MANAGER', '/balance-admin')).toBe(false);
+    expect(canAccessPath('SYSTEM_ADMIN', '/payslip-management')).toBe(false);
+    expect(canAccessPath('EMPLOYEE', '/payslip-management')).toBe(false);
     expect(canAccessPath('SYSTEM_ADMIN', '/user-management')).toBe(true);
     expect(canAccessPath('EMPLOYEE', '/user-management')).toBe(false);
     expect(canAccessPath('MANAGER', '/payslips')).toBe(false);

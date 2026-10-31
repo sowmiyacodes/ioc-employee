@@ -86,6 +86,16 @@ class AdminUserManagementIntegrationTest {
     }
 
     @Test
+    void searchAndSortParametersCannotInjectQueries() throws Exception {
+        mockMvc.perform(get("/api/admin/users")
+                        .queryParam("search", "' OR '1'='1")
+                        .queryParam("sortBy", "id desc, (select 1)")
+                        .header("Authorization", bearer("sysadmin1", Role.SYSTEM_ADMIN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements", is(0)));
+    }
+
+    @Test
     void administratorCanEditEmployeeProfileAndAssignManager() throws Exception {
         mockMvc.perform(post("/api/admin/users")
                         .header("Authorization", bearer("sysadmin1", Role.SYSTEM_ADMIN))

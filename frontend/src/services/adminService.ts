@@ -136,4 +136,25 @@ export const adminService = {
       method: 'PUT',
       body: JSON.stringify({ employeeProfileId, leaveType, entitledDays }),
     }),
+  uploadPayslip: async (employeeProfileId: number, payPeriodStart: string,
+                        payPeriodEnd: string, file: File) => {
+    const token = authService.getToken();
+    const formData = new FormData();
+    formData.append('employeeProfileId', String(employeeProfileId));
+    formData.append('payPeriodStart', payPeriodStart);
+    formData.append('payPeriodEnd', payPeriodEnd);
+    formData.append('file', file);
+    const response = await fetch(`${API_BASE_URL}/hr/payslips`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    const result = await response.json() as ApiResponse<{ id: number }>;
+    if (!response.ok || !result.success) {
+      if (response.status === 401) authService.clearSession();
+      const reference = result.correlationId ? ` (Reference: ${result.correlationId})` : '';
+      throw new Error(`${result.message || 'The payslip could not be uploaded.'}${reference}`);
+    }
+    return result.data;
+  },
 };

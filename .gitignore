@@ -1,8 +1,11 @@
 backend/data/*
 !backend/data/.gitkeep
+backend/protected-payslips/
 backend/target/
 frontend/node_modules/
 frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
 target/
 frontend/.env.local
 backend/.env

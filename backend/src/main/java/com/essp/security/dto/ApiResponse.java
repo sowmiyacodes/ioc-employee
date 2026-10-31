@@ -1,21 +1,28 @@
 package com.essp.security.dto;
 
+import org.slf4j.MDC;
+
 public class ApiResponse<T> {
     private boolean success;
     private String message;
     private T data;
+    private String correlationId;
 
-    public ApiResponse() {}
+    public ApiResponse() {
+        this.correlationId = MDC.get("correlationId");
+    }
 
     public ApiResponse(boolean success, String message) {
         this.success = success;
         this.message = message;
+        this.correlationId = MDC.get("correlationId");
     }
 
     public ApiResponse(boolean success, String message, T data) {
         this.success = success;
         this.message = message;
         this.data = data;
+        this.correlationId = MDC.get("correlationId");
     }
 
     public static <T> ApiResponse<T> ok(String message, T data) {
@@ -40,5 +47,9 @@ public class ApiResponse<T> {
 
     public T getData() {
         return data;
+    }
+
+    public String getCorrelationId() {
+        return correlationId;
     }
 }

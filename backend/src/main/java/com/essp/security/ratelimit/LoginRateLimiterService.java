@@ -13,30 +13,38 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class LoginRateLimiterService {
 
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
-    private final int capacity;
+    private final Map<String, Bucket> accountBuckets = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> ipBuckets = new ConcurrentHashMap<>();
+    private final int accountCapacity;
+    private final int ipCapacity;
     private final int refillMinutes;
 
     public LoginRateLimiterService(
-            @Value("${app.security.rate-limit.login-capacity:5}") int capacity,
+            @Value("${app.security.rate-limit.login-account-capacity:5}") int accountCapacity,
+            @Value("${app.security.rate-limit.login-ip-capacity:20}") int ipCapacity,
             @Value("${app.security.rate-limit.login-refill-minutes:1}") int refillMinutes) {
-        this.capacity = capacity;
+        if (accountCapacity < 1 || ipCapacity < 1 || refillMinutes < 1) {
+            throw new IllegalArgumentException("Rate-limit capacities and refill interval must be positive");
+        }
+        this.accountCapacity = accountCapacity;
+        this.ipCapacity = ipCapacity;
         this.refillMinutes = refillMinutes;
     }
 
-    private Bucket createNewBucket() {
+    private Bucket createNewBucket(int capacity) {
         Bandwidth limit = Bandwidth.classic(capacity, Refill.greedy(capacity, Duration.ofMinutes(refillMinutes)));
         return Bucket.builder()
                 .addLimit(limit)
                 .build();
     }
 
-    public boolean tryConsume(String clientKey) {
-        Bucket bucket = buckets.computeIfAbsent(clientKey, k -> createNewBucket());
-        return bucket.tryConsume(1);
-    }
-
-    public void reset(String clientKey) {
-        buckets.remove(clientKey);
+    public boolean tryConsume(String clientIp, String accountIdentifier) {
+        Bucket ipBucket = ipBuckets.computeIfAbsent(clientIp, ignored -> createNewBucket(ipCapacity));
+        Bucket accountBucket = accountBuckets.computeIfAbsent(
+                accountIdentifier.toLowerCase(java.util.Locale.ROOT),
+                ignored -> createNewBucket(accountCapacity));
+        boolean ipAllowed = ipBucket.tryConsume(1);
+        boolean accountAllowed = accountBucket.tryConsume(1);
+        return ipAllowed && accountAllowed;
     }
 }

@@ -39,9 +39,8 @@ public class AuthService {
     public LoginResponse authenticate(LoginRequest request, String clientIp) {
         String identifier = request.getUsername().trim();
 
-        // 1. Rate Limiting check per Client IP and Account Identifier
-        String rateLimitKey = clientIp + "_" + identifier.toLowerCase();
-        if (!rateLimiterService.tryConsume(rateLimitKey)) {
+        // Apply independent limits so changing account names cannot evade the client IP limit.
+        if (!rateLimiterService.tryConsume(clientIp, identifier)) {
             auditService.logRateLimitExceeded(clientIp, identifier);
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts. Please try again later.");
         }
